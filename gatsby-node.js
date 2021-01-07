@@ -1,210 +1,87 @@
 const path = require(`path`)
+const fs = require('fs');
 
-// exports.sourceNodes = async ({ actions, createNodeId, createContentDigest }) => {
-//   const { createNode, createTypes } = actions
-//   createTypes(`
-//       type contentPagePath implements Node {
-//           slug: String,
-//           title: String,
-//           path: String,
-//           id: String
-//       }
-//   `)
-// }
-// exports.createResolvers = ({ createResolvers, schema }) => {
-//   console.log("hej")
+exports.sourceNodes = async ({ actions, createNodeId, createContentDigest }) => {
+  const { createNode, createTypes } = actions;
+  const rawdata = fs.readFileSync('mockdata.json');
+  const articles = JSON.parse(rawdata);
+  const markets = process.env.MARKETS.split(',');
 
-//   createResolvers({
-//     Query: {
-//       allAuthorFullNames: {
-//         type: [`contentPagePath`],
-//         resolve(source, args, context, info) {
-//           const pages = context.nodeModel.getAllNodes({
-//             type: `DatoCmsPage`,
-//           })
-//           console.log(pages)
-//           return pages.map(page => {
-//             console.log(page.entityPayload.attributes.slug)
-//             return {
-//               slug: "String",
-//               title: "String",
-//               path: "String",
-//               id: "String"
-//             }
-//           })
-//         },
-//       },
-//     },
-//   })
-//   // createResolvers({
-//   //   DatoCmsPage: {
-//   //     // Modify birthday resolver so that it uses 1970-01-01 as default date
-//   //     slug: {
-//   //       resolve(source, args, context, info) {
-//   //         // original resolver available as "info.originalResolver"
-//   //         console.log(source)
-//   //         return {};
-//   //         // return info.originalResolver(
-//   //         //   {
-//   //         //     ...source,
-//   //         //     slug: slug + "slug"
-//   //         //   },
-//   //         //   args, context, info)
-//   //       },
-//   //     },
-//   //   },
-//   // })
-// }
+  createTypes(`
+    type apiArticle implements Node {
+        entityId: String,
+        title: String,
+        description: String,
+        price: String,
+        currentMarket: String,
+        image: JSON
+    }
+  `);
 
-// async function createContentPagePaths(actions, createNodeId, createContentDigest){
-//   const { createNode, createTypes } = actions
+  createTypes(`
+    type apiCategory implements Node {
+        entityId: String,
+        title: String,
+        text: String,
+        brand: String,
+        menu: String,
+        url: String,
+        path: String,
+        market: String,
+        availableOnMarkets: String,
+        currentMarket: String,
+        image: JSON
+    }
+  `);
 
-//   const pageStructure = await graphql(`
-//     {
-//       allDatoCmsPage(filter: {root: {eq: true}}) {
-//         edges {
-//           node {
-//             id
-//             title
-//             position
-//             locale
-//             slug
-//             treeChildren {
-//               id
-//               title
-//               slug
-//               position
-//               locale
-//               treeChildren {
-//                 id
-//                 title
-//                 slug
-//                 position
-//                 locale
-//                 treeChildren {
-//                   id
-//                   slug
-//                   title
-//                   position
-//                   locale
-//                   treeChildren {
-//                     id
-//                     title
-//                     slug
-//                     position
-//                     locale
-//                     treeChildren {
-//                       id
-//                       slug
-//                       title
-//                       position
-//                       locale
-//                       treeChildren {
-//                         id
-//                         slug
-//                         title
-//                         position
-//                         locale
-//                       }
-//                     }
-//                   }
-//                 }
-//               }
-//             }
-//           }
-//         }
-//       }
-//     }
-//     `)
+  createTypes(`
+    type market implements Node {
+        countryCode: String,
+        flag: String,
+        channelNodeName: String
+    }
+  `);
 
-//     function createLocaliedUrls(node){
+  markets.forEach(marketId => {
+    var marketParts = marketId.split('-');
+    var country = marketParts.length > 1 ? marketParts[1] : marketParts[0];
+    const market = {
+        countryCode: marketId,
+        flag: `/flag/${country.toLowerCase()}.png`,
+        channelNodeName: `${marketId.toLocaleLowerCase().replace('-', '')}`,
+    }
 
-//       const contentPagePath = {
-//         id: node.id,
-//         locale: node.locale,
-//         slug: `${node.locale}`,
-//         title: node.title,
-//         includeInMenu: true
-//       }
-//       createNode({
-//         id: contentPagePath.id,
-//         parent: null,
-//         children: [],
-//         internal: {
-//             type: `contentPagePaths`,
-//             contentDigest: createContentDigest(contentPagePath),
-//         },
-//       })
+    createNode({
+        ...market,
+        id: createNodeId(marketId),
+        parent: null,
+        children: [],
+        internal: {
+            type: `market`,
+            contentDigest: createContentDigest(market),
+        },
+    })
 
-//       if(node.treeChildren !== null && node.treeChildren.length > 0)
-//         createPagesFromTreeChildren(node.treeChildren, slug);
-//     }
+    articles.forEach(article => {
+      const newArticle = { ...article, locale: marketId };
+      const id = `${marketId}-${article.entityId}`;
+      createNode({
+        ...newArticle,
+        id: createNodeId(id),
+        parent: null,
+        children: [],
+        internal: {
+          type: `apiArticle`,
+          contentDigest: createContentDigest(newArticle),
+        },
+      });
+    });
+  })
 
-//     function createPagesFromTreeChildren(childPages, parentSlug){
-//       childPages.sort((a, b) => {
-//         return a.position - b.position;
-//         }).forEach(page => {
-
-//         const contentPagePath = {
-//           id: page.id,
-//           locale: page.locale,
-//           slug: `${parentSlug}/${page.slug}`,
-//           title: page.title,
-//           includeInMenu: true
-//         }
-
-//         createNode({
-//           id: contentPagePath.id,
-//           parent: null,
-//           children: [],
-//           internal: {
-//               type: `contentPagePaths`,
-//               contentDigest: createContentDigest(contentPagePath),
-//           },
-//         })
-
-//         if(page.treeChildren !== null && page.treeChildren.length > 0)
-//           createPagesFromTreeChildren(page.treeChildren, slug);
-//       }) 
-      
-//     }
-
-//     pageStructure.data.allDatoCmsPage.edges.forEach(element => {
-//       createLocaliedUrls(element.node);
-//     });
-// }
-
-// exports.sourceNodes = async ({ actions, createNodeId, createContentDigest }) => {
-//   await createContentPagePaths(actions, createNodeId, createContentDigest)
-// }
-// exports.createContentPages = ({ graphql, actions }) => {
-//   const { createPage } = actions
-
-//   // return new Promise((resolve, reject) => {
-//   //   graphql(`
-//   //     {
-//   //       allDatoCmsWork {
-//   //         edges {
-//   //           node {
-//   //             slug
-//   //           }
-//   //         }
-//   //       }
-//   //     }
-//   //   `).then(result => {
-//   //     result.data.allDatoCmsWork.edges.map(({ node: work }) => {
-//   //       createPage({
-//   //         path: `works/${work.slug}`,
-//   //         component: path.resolve(`./src/templates/work.js`),
-//   //         context: {
-//   //           slug: work.slug,
-//   //         },
-//   //       })
-//   //     })
-//   //     resolve()
-//   //   })
-//   // })
-// }
+  for (let index = 0; index < 3; index++) {
+    
+  }
+};
 
 async function createContentPageNodes(graphql, actions){
   const { createPage } = actions
