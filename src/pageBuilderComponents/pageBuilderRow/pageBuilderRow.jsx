@@ -5,8 +5,8 @@ import PropTypes from "prop-types";
 import { PageBuilderRenderer } from "./../";
 
 const PageContentRow = ({ block }) => {
-  debugger
   return (<div className="row">
+    <p>I am a row</p>
     Centered: {block.centered ? "true" : "false"} 
     NumberOfColums: {block.numberOfColums}
     <div>

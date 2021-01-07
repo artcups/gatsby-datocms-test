@@ -3,10 +3,14 @@
 import React from "react";
 import PropTypes from "prop-types";
 import { PageBuilderRow, PageBuilderColumn } from "./../";
+import { Hero, Editorial, ArticleList } from "./../contentComponents";
 
 const Components = {
     column: PageBuilderColumn,
     row: PageBuilderRow,
+    hero: Hero,
+    editorial: Editorial,
+    article_list: ArticleList,
   };
 
 const PageBuilderRenderer = ({ block }) => {
