@@ -55,6 +55,13 @@ export const query = graphql`
           ... on DatoCmsArticleList {
             header
             articles
+            apiArticles {
+              locale
+              image
+              title
+              price
+              articleNumber
+            }
             model {
               apiKey
             }

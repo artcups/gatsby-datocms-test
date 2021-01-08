@@ -1,5 +1,11 @@
 const path = require(`path`)
 const fs = require('fs');
+const resolvers = require('./gatsby/resolvers')
+
+// Extend the schemas from external sources
+exports.createResolvers = ({ createResolvers }) => {
+  createResolvers(resolvers)
+}
 
 exports.sourceNodes = async ({ actions, createNodeId, createContentDigest }) => {
   const { createNode, createTypes } = actions;
